@@ -227,12 +227,18 @@ def user_daily(
 @app.get("/api/users/{user_id}/hourly")
 def user_hourly(
     user_id: str,
+    day: date | None = Query(None),
     start: date | None = Query(None),
     end: date | None = Query(None),
 ) -> list[dict]:
-    """Distribución horaria de los puffs (hora del timestamp UTC)."""
+    """Distribución horaria de los puffs (hora del timestamp UTC).
+
+    Con `day` se limita a un día concreto; sin él agrega todas las jornadas.
+    """
     _require_user(user_id)
     df = _STATE.df[_STATE.df["user_id"] == user_id].dropna(subset=["timestamp"])
+    if day:
+        df = df[df["date"] == day.isoformat()]
     if start:
         df = df[df["date"] >= start.isoformat()]
     if end:
@@ -258,11 +264,12 @@ def user_puffs(
     df = _STATE.df[_STATE.df["user_id"] == user_id]
     if day:
         df = df[df["date"] == day.isoformat()]
-    # Nicotina acumulada del día: suma de puffs desde el inicio del día filtrado.
+    # Nicotina acumulada: se reinicia cada día (correcto con y sin filtro de día).
     df = df.copy()
-    df["nicotine_mg_cumulative"] = (
-        df["puffs_count"].astype(float).cumsum() * NICOTINE_MG_PER_PUFF
-    ).round(3)
+    acumulado = (
+        df.assign(_puffs=df["puffs_count"].astype(float)).groupby("date")["_puffs"].cumsum()
+    )
+    df["nicotine_mg_cumulative"] = (acumulado * NICOTINE_MG_PER_PUFF).round(3)
     df = df.tail(limit)
     return [
         {

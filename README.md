@@ -93,8 +93,8 @@ backend). Aparecerán automáticamente en el selector de pacientes.
 | GET | `/api/users` | Lista de pacientes con rango de fechas |
 | GET | `/api/users/{id}/summary` | KPIs: total, promedio, % días dentro del límite, tendencia 7 días y nicotina (mg) |
 | GET | `/api/users/{id}/daily` | Serie diaria: puffs, límite, dentro/fuera y nicotina (mg) |
-| GET | `/api/users/{id}/hourly` | Distribución horaria del consumo (puffs y nicotina mg) |
-| GET | `/api/users/{id}/puffs?day=YYYY-MM-DD` | Detalle de puffs de un día (timeline) con nicotina por puff y acumulada |
+| GET | `/api/users/{id}/hourly?day=YYYY-MM-DD` | Distribución horaria (puffs y nicotina mg); sin `day` agrega todas las jornadas |
+| GET | `/api/users/{id}/puffs?day=YYYY-MM-DD` | Detalle de puffs con nicotina por puff y acumulada; sin `day` devuelve todos los registros |
 
 ## Cálculo de nicotina
 
@@ -122,10 +122,13 @@ expone también en `GET /api/device`. Con ella se calculan:
   (total, media diaria y último día) junto al cálculo utilizado.
 - **Gráfico diario**: barras de puffs por día, la línea del límite terapéutico y la
   **línea de nicotina estimada (mg)** en el eje derecho.
-- **Patrón horario**: puffs por franja horaria con su **equivalencia en nicotina (mg)**.
+- **Patrón horario**: puffs por franja horaria con su **equivalencia en nicotina (mg)**; con
+  desplegable para ver **todas las jornadas** o **un día concreto**.
 - **Adherencia**: % diario de puffs dentro del límite.
-- **Timeline intra-día**: tabla con cada puff, su hora, número, límite, **nicotina
-  consumida por ese puff (0,057 mg) y nicotina acumulada del día**, y su estado.
+- **Timeline**: tabla con cada puff, su fecha (en modo "todos"), hora, número, límite, **nicotina
+  consumida por ese puff (0,057 mg) y nicotina acumulada del día**, y su estado. El selector
+  **"Día a inspeccionar"** incluye la opción **"Todos los días"** para ver todos los registros
+  o filtrar por un día concreto (el acumulado de nicotina se reinicia cada día).
 
 ## Evolución prevista (no implementada aún)
 

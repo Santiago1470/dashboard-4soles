@@ -26,7 +26,11 @@ export const api = {
   users: () => get<UserInfo[]>('/users'),
   summary: (userId: string) => get<UserSummary>(`/users/${userId}/summary`),
   daily: (userId: string) => get<DailyRecord[]>(`/users/${userId}/daily`),
-  hourly: (userId: string) => get<HourlyRecord[]>(`/users/${userId}/hourly`),
-  puffs: (userId: string, day?: string) =>
-    get<PuffRecord[]>(`/users/${userId}/puffs${day ? `?day=${day}` : ''}`),
+  // `day` opcional: sin él se agregan todas las jornadas; limit alto para el modo "todos"
+  hourly: (userId: string, day?: string) =>
+    get<HourlyRecord[]>(`/users/${userId}/hourly${day ? `?day=${day}` : ''}`),
+  puffs: (userId: string, day?: string, limit = 5000) =>
+    get<PuffRecord[]>(
+      `/users/${userId}/puffs?limit=${limit}${day ? `&day=${day}` : ''}`,
+    ),
 }

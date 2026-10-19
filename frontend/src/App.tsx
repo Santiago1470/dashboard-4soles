@@ -24,6 +24,7 @@ import { DailyPuffsChart } from './components/DailyPuffsChart'
 import { HourlyChart } from './components/HourlyChart'
 import { KpiCard } from './components/KpiCard'
 import { PuffTable } from './components/PuffTable'
+import { DAY_ALL } from './constants'
 
 export default function App() {
   const [users, setUsers] = useState<UserInfo[]>([])
@@ -32,7 +33,8 @@ export default function App() {
   const [daily, setDaily] = useState<DailyRecord[]>([])
   const [hourly, setHourly] = useState<HourlyRecord[]>([])
   const [puffs, setPuffs] = useState<PuffRecord[]>([])
-  const [selectedDay, setSelectedDay] = useState<string>('')
+  const [selectedDay, setSelectedDay] = useState<string>(DAY_ALL)
+  const [hourlyDay, setHourlyDay] = useState<string>(DAY_ALL)
   const [device, setDevice] = useState<DeviceInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -65,15 +67,11 @@ export default function App() {
     if (!selectedUser) return
     setLoading(true)
     setError(null)
-    Promise.all([
-      api.summary(selectedUser),
-      api.daily(selectedUser),
-      api.hourly(selectedUser),
-    ])
-      .then(([s, d, h]) => {
+    setHourlyDay(DAY_ALL) // el grafico horario vuelve a "todas las jornadas"
+    Promise.all([api.summary(selectedUser), api.daily(selectedUser)])
+      .then(([s, d]) => {
         setSummary(s)
         setDaily(d)
-        setHourly(h)
         // Selecciona por defecto el ultimo dia con registros
         const last = d.length > 0 ? d[d.length - 1].date : ''
         setSelectedDay(last)
@@ -82,14 +80,23 @@ export default function App() {
       .finally(() => setLoading(false))
   }, [selectedUser])
 
-  // Cambia el dia de la timeline -> carga detalle de puffs
+  // Cambia el dia de la timeline -> carga detalle de puffs ("todos" = sin filtro)
   useEffect(() => {
     if (!selectedUser || !selectedDay) return
     api
-      .puffs(selectedUser, selectedDay)
+      .puffs(selectedUser, selectedDay === DAY_ALL ? undefined : selectedDay)
       .then(setPuffs)
       .catch((e: Error) => setError(e.message))
   }, [selectedUser, selectedDay])
+
+  // Cambia el dia del grafico horario (o "todas las jornadas") -> recarga la serie
+  useEffect(() => {
+    if (!selectedUser) return
+    api
+      .hourly(selectedUser, hourlyDay === DAY_ALL ? undefined : hourlyDay)
+      .then(setHourly)
+      .catch((e: Error) => setError(e.message))
+  }, [selectedUser, hourlyDay])
 
   const shortId = (id: string) => `${id.slice(0, 8)}...`
 
@@ -225,7 +232,12 @@ export default function App() {
             {/* Graficos secundarios */}
             <Grid container spacing={2} sx={{ mb: 3 }}>
               <Grid size={{ xs: 12, md: 6 }}>
-                <HourlyChart data={hourly} />
+                <HourlyChart
+                  data={hourly}
+                  days={daily}
+                  day={hourlyDay}
+                  onDayChange={setHourlyDay}
+                />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
                 <ComplianceChart data={daily} />
@@ -249,6 +261,7 @@ export default function App() {
                       {d.daily_limit !== null ? ` / lim. ${d.daily_limit}` : ''}
                     </MenuItem>
                   ))}
+                  <MenuItem value={DAY_ALL}>Todos los días (todos los registros)</MenuItem>
                 </Select>
               </FormControl>
             </Box>

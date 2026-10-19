@@ -11,6 +11,7 @@ import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
 import Typography from '@mui/material/Typography'
 import type { PuffRecord } from '../api/types'
+import { DAY_ALL } from '../constants'
 
 interface PuffTableProps {
   data: PuffRecord[]
@@ -25,12 +26,14 @@ const fmtMg = (mg: number | null | undefined) =>
 
 /** Timeline detallada de puffs de un día concreto (marca si excedió el límite). */
 export function PuffTable({ data, day }: PuffTableProps) {
+  const allDays = day === DAY_ALL
+
   if (data.length === 0) {
     return (
       <Card>
         <CardContent>
           <Typography variant="subtitle1" gutterBottom>
-            Timeline del día {day}
+            {allDays ? 'Timeline de todos los días' : `Timeline del día ${day}`}
           </Typography>
           <Alert severity="info">No hay puffs registrados para este día.</Alert>
         </CardContent>
@@ -44,15 +47,19 @@ export function PuffTable({ data, day }: PuffTableProps) {
     <Card>
       <CardContent>
         <Typography variant="subtitle1" gutterBottom>
-          Timeline del día {day} ({data.length} puffs · {fmtMg(dayMg)} mg de nicotina)
+          {allDays
+            ? `Timeline de todos los días (${data.length} puffs · ${fmtMg(dayMg)} mg de nicotina)`
+            : `Timeline del día ${day} (${data.length} puffs · ${fmtMg(dayMg)} mg de nicotina)`}
         </Typography>
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-          Equivalencia: 0,057 mg de nicotina por cada puff (Muss Mármol 700 · 40 mg / 700 puffs).
+          Equivalencia: 0,057 mg de nicotina por cada puff (Muss Mármol 700 · 40 mg / 700 puffs)
+          {allDays ? '; el acumulado se reinicia cada día.' : '.'}
         </Typography>
         <TableContainer sx={{ maxHeight: 360 }}>
           <Table size="small" stickyHeader>
             <TableHead>
               <TableRow>
+                {allDays && <TableCell>Fecha</TableCell>}
                 <TableCell>Hora (UTC)</TableCell>
                 <TableCell align="right"># Puff</TableCell>
                 <TableCell align="right">Límite</TableCell>
@@ -65,6 +72,7 @@ export function PuffTable({ data, day }: PuffTableProps) {
             <TableBody>
               {data.map((p, i) => (
                 <TableRow key={i} hover>
+                  {allDays && <TableCell>{p.date}</TableCell>}
                   <TableCell>
                     {p.timestamp
                       ? new Date(p.timestamp).toLocaleTimeString('es-ES', { hour12: false })
