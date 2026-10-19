@@ -287,9 +287,9 @@ export default function App() {
           </Typography>
         )}
 
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 4 }}>
+        {/* <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 4 }}>
           Prototipo con datos locales (CSV). Sin conexion a base de datos ni servicios externos.
-        </Typography>
+        </Typography> */}
       </Container>
     </Box>
   )
