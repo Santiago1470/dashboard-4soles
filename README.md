@@ -87,23 +87,45 @@ backend). Aparecerán automáticamente en el selector de pacientes.
 
 | Método | Ruta | Descripción |
 | --- | --- | --- |
-| GET | `/api/health` | Estado, archivos cargados, nº de filas/usuarios |
+| GET | `/api/health` | Estado, archivos cargados, nº de filas/usuarios, dispositivo |
+| GET | `/api/device` | Dispositivo de referencia y equivalencia de nicotina por puff |
 | POST | `/api/reload` | Vuelve a leer los CSV de `backend/data/` |
 | GET | `/api/users` | Lista de pacientes con rango de fechas |
-| GET | `/api/users/{id}/summary` | KPIs: total, promedio, % días dentro del límite, tendencia 7 días |
-| GET | `/api/users/{id}/daily` | Serie diaria: puffs, límite, dentro/fuera |
-| GET | `/api/users/{id}/hourly` | Distribución horaria del consumo |
-| GET | `/api/users/{id}/puffs?day=YYYY-MM-DD` | Detalle de puffs de un día (timeline) |
+| GET | `/api/users/{id}/summary` | KPIs: total, promedio, % días dentro del límite, tendencia 7 días y nicotina (mg) |
+| GET | `/api/users/{id}/daily` | Serie diaria: puffs, límite, dentro/fuera y nicotina (mg) |
+| GET | `/api/users/{id}/hourly` | Distribución horaria del consumo (puffs y nicotina mg) |
+| GET | `/api/users/{id}/puffs?day=YYYY-MM-DD` | Detalle de puffs de un día (timeline) con nicotina por puff y acumulada |
+
+## Cálculo de nicotina
+
+Para el dispositivo de referencia **Muss Mármol 700** (2 ml de líquido · 20 mg/ml →
+**40 mg de nicotina totales** repartidos en un máximo de **700 puffs**):
+
+```
+consumo por puff = 40 mg / 700 puffs = 0,057 mg de nicotina por puff
+nicotina (mg)   = nº de puffs × 0,057
+```
+
+La constante vive en `backend/app/main.py` (`DEVICE` y `NICOTINE_MG_PER_PUFF`) y se
+expone también en `GET /api/device`. Con ella se calculan:
+
+- `nicotine_mg` y `nicotine_mg_cumulative` en `/puffs` (por puff y acumulado del día),
+- `nicotine_mg` y `nicotine_limit_mg` en `/daily`,
+- `nicotine_mg` en `/hourly`,
+- `total_nicotine_mg`, `avg_nicotine_mg_per_day` y `last_day_nicotine_mg` en `/summary`.
 
 ## Qué muestra el dashboard
 
 - **Selector de paciente** (si hay varios CSV/usuarios).
 - **KPIs**: total de puffs, promedio diario, % de días dentro del límite, tendencia
-  de los últimos 7 días vs. los 7 previos.
-- **Gráfico diario**: barras de puffs por día con la línea del límite terapéutico.
-- **Patrón horario**: en qué franjas del día concentra el consumo.
+  de los últimos 7 días vs. los 7 previos, más el **resumen de nicotina consumida**
+  (total, media diaria y último día) junto al cálculo utilizado.
+- **Gráfico diario**: barras de puffs por día, la línea del límite terapéutico y la
+  **línea de nicotina estimada (mg)** en el eje derecho.
+- **Patrón horario**: puffs por franja horaria con su **equivalencia en nicotina (mg)**.
 - **Adherencia**: % diario de puffs dentro del límite.
-- **Timeline intra-día**: tabla con cada puff, su hora, número, límite y estado.
+- **Timeline intra-día**: tabla con cada puff, su hora, número, límite, **nicotina
+  consumida por ese puff (0,057 mg) y nicotina acumulada del día**, y su estado.
 
 ## Evolución prevista (no implementada aún)
 

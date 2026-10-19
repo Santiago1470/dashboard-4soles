@@ -32,6 +32,12 @@ export interface UserSummary {
   last_day_limit: number | null
   last_day_within: boolean
   trend_last7_pct: number | null
+  /** Nicotina total estimada: puffs * 0,057 mg */
+  total_nicotine_mg: number | null
+  /** Nicotina media diaria estimada (mg) */
+  avg_nicotine_mg_per_day: number | null
+  /** Nicotina estimada del último día con registros (mg) */
+  last_day_nicotine_mg: number | null
   date_range: { start: string; end: string }
 }
 
@@ -43,11 +49,17 @@ export interface DailyRecord {
   over_count: number
   pct_within: number
   within_day: boolean
+  /** Nicotina consumida ese día (mg): puff_count * 0,057 */
+  nicotine_mg: number | null
+  /** Equivalente en nicotina del límite diario (mg) */
+  nicotine_limit_mg: number | null
 }
 
 export interface HourlyRecord {
   hour: number
   puffs: number
+  /** Nicotina consumida en esa hora (mg): puffs * 0,057 */
+  nicotine_mg: number | null
 }
 
 export interface PuffRecord {
@@ -57,4 +69,18 @@ export interface PuffRecord {
   daily_limit: number | null
   within_limit: boolean | null
   source: string
+  /** Nicotina consumida por este puff (mg): 0,057 */
+  nicotine_mg: number | null
+  /** Nicotina acumulada del día hasta este puff (mg) */
+  nicotine_mg_cumulative: number | null
+}
+
+/** Especificaciones del dispositivo de referencia (Muss Mármol 700). */
+export interface DeviceInfo {
+  model: string
+  liquid_ml: number
+  nicotine_concentration_mg_ml: number
+  total_nicotine_mg: number
+  max_puffs: number
+  nicotine_mg_per_puff: number
 }

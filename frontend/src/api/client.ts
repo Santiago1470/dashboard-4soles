@@ -1,5 +1,6 @@
 import type {
   DailyRecord,
+  DeviceInfo,
   HealthInfo,
   HourlyRecord,
   PuffRecord,
@@ -21,6 +22,7 @@ async function get<T>(path: string): Promise<T> {
 
 export const api = {
   health: () => get<HealthInfo>('/health'),
+  device: () => get<DeviceInfo>('/device'),
   users: () => get<UserInfo[]>('/users'),
   summary: (userId: string) => get<UserSummary>(`/users/${userId}/summary`),
   daily: (userId: string) => get<DailyRecord[]>(`/users/${userId}/daily`),

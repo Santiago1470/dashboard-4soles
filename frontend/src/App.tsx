@@ -18,7 +18,7 @@ import TrendingDownIcon from '@mui/icons-material/TrendingDown'
 import PercentIcon from '@mui/icons-material/Percent'
 
 import { api } from './api/client'
-import type { DailyRecord, HourlyRecord, PuffRecord, UserInfo, UserSummary } from './api/types'
+import type { DailyRecord, DeviceInfo, HourlyRecord, PuffRecord, UserInfo, UserSummary } from './api/types'
 import { ComplianceChart } from './components/ComplianceChart'
 import { DailyPuffsChart } from './components/DailyPuffsChart'
 import { HourlyChart } from './components/HourlyChart'
@@ -33,8 +33,17 @@ export default function App() {
   const [hourly, setHourly] = useState<HourlyRecord[]>([])
   const [puffs, setPuffs] = useState<PuffRecord[]>([])
   const [selectedDay, setSelectedDay] = useState<string>('')
+  const [device, setDevice] = useState<DeviceInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Especificaciones del dispositivo (equivalencia de nicotina por puff)
+  useEffect(() => {
+    api
+      .device()
+      .then(setDevice)
+      .catch(() => setDevice(null))
+  }, [])
 
   // Carga inicial: lista de usuarios del backend
   useEffect(() => {
@@ -93,6 +102,13 @@ export default function App() {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             4Soles - Dashboard Clinico
           </Typography>
+          {device && (
+            <Chip
+              label={`${device.model} · ${device.nicotine_concentration_mg_ml} mg/ml · ${device.nicotine_mg_per_puff} mg/puff`}
+              size="small"
+              sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white', mr: 1 }}
+            />
+          )}
           {summary && (
             <Chip
               label={`Ultimo registro: ${summary.last_date}`}
@@ -185,6 +201,20 @@ export default function App() {
               </Grid>
             </Grid>
 
+            {/* Resumen de nicotina estimada (puffs × 0,057 mg) */}
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Nicotina consumida estimada:{' '}
+              <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                {summary.total_nicotine_mg ?? '—'} mg
+              </Box>{' '}
+              (promedio {summary.avg_nicotine_mg_per_day ?? '—'} mg/día · último día{' '}
+              {summary.last_day_nicotine_mg ?? '—'} mg) · cálculo: puffs ×{' '}
+              {device?.nicotine_mg_per_puff ?? 0.057} mg/puff
+              {device
+                ? ` · ${device.model}: ${device.total_nicotine_mg} mg en ${device.max_puffs} puffs`
+                : ''}
+            </Typography>
+
             {/* Grafico principal diario */}
             <Grid container spacing={2} sx={{ mb: 3 }}>
               <Grid size={12}>
@@ -215,6 +245,7 @@ export default function App() {
                   {daily.map((d) => (
                     <MenuItem key={d.date} value={d.date}>
                       {d.date} - {d.puff_count} puffs
+                      {d.nicotine_mg !== null ? ` · ${d.nicotine_mg} mg nicotina` : ''}
                       {d.daily_limit !== null ? ` / lim. ${d.daily_limit}` : ''}
                     </MenuItem>
                   ))}

@@ -14,6 +14,31 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .data_loader import DATA_DIR, LoadResult, load_all
 
+# ---------------------------------------------------------------------------
+# Dispositivo de referencia y equivalencia de nicotina por puff
+#
+# Muss Mármol 700: 2 ml de líquido con 20 mg/ml de nicotina = 40 mg de nicotina
+# totales, distribuidos en un máximo de 700 puffs.
+#   40 mg / 700 puffs = 0,057 mg de nicotina consumida por cada puff registrado.
+# ---------------------------------------------------------------------------
+DEVICE: dict = {
+    "model": "Muss Mármol 700",
+    "liquid_ml": 2.0,
+    "nicotine_concentration_mg_ml": 20.0,
+    "total_nicotine_mg": 40.0,
+    "max_puffs": 700,
+    "nicotine_mg_per_puff": 0.057,
+}
+NICOTINE_MG_PER_PUFF: float = 0.057
+
+
+def _nicotine_mg(puffs) -> float | None:
+    """Equivalencia en mg de nicotina de un número de puffs (0,057 mg/puff)."""
+    if puffs is None or pd.isna(puffs):
+        return None
+    return round(float(puffs) * NICOTINE_MG_PER_PUFF, 3)
+
+
 app = FastAPI(
     title="4Soles · Dashboard Clínico API",
     description="Prototipo: patrones de consumo de nicotina a partir de CSV exportados por la app.",
@@ -81,8 +106,16 @@ def health() -> dict:
         "rows": int(len(_STATE.df)),
         "users": int(_STATE.df["user_id"].nunique()) if not _STATE.df.empty else 0,
         "data_dir": str(DATA_DIR),
+        "device": DEVICE,
         "server_time": datetime.now(timezone.utc).isoformat(),
     }
+
+
+@app.get("/api/device")
+def device_info() -> dict:
+    """Especificaciones del dispositivo y equivalencia de nicotina por puff."""
+    return DEVICE
+
 
 
 @app.post("/api/reload")
@@ -155,6 +188,9 @@ def user_summary(
         "last_day_limit": None if pd.isna(last["daily_limit"]) else int(last["daily_limit"]),
         "last_day_within": bool(last["within_day"]),
         "trend_last7_pct": trend_pct,
+        "total_nicotine_mg": _nicotine_mg(total_puffs),
+        "avg_nicotine_mg_per_day": _nicotine_mg(avg),
+        "last_day_nicotine_mg": _nicotine_mg(int(last["puff_count"])),
         "date_range": {"start": str(daily["date"].min()), "end": str(daily["date"].max())},
     }
 
@@ -181,6 +217,8 @@ def user_daily(
             "over_count": int(r["over_count"]),
             "pct_within": float(r["pct_within"]),
             "within_day": bool(r["within_day"]),
+            "nicotine_mg": _nicotine_mg(r["puff_count"]),
+            "nicotine_limit_mg": _nicotine_mg(r["daily_limit"]),
         }
         for _, r in daily.iterrows()
     ]
@@ -203,7 +241,10 @@ def user_hourly(
         return []
     hours = df["timestamp"].dt.tz_convert(None).dt.hour
     counts = hours.value_counts().reindex(range(24), fill_value=0).sort_index()
-    return [{"hour": int(h), "puffs": int(c)} for h, c in counts.items()]
+    return [
+        {"hour": int(h), "puffs": int(c), "nicotine_mg": _nicotine_mg(int(c))}
+        for h, c in counts.items()
+    ]
 
 
 @app.get("/api/users/{user_id}/puffs")
@@ -217,6 +258,11 @@ def user_puffs(
     df = _STATE.df[_STATE.df["user_id"] == user_id]
     if day:
         df = df[df["date"] == day.isoformat()]
+    # Nicotina acumulada del día: suma de puffs desde el inicio del día filtrado.
+    df = df.copy()
+    df["nicotine_mg_cumulative"] = (
+        df["puffs_count"].astype(float).cumsum() * NICOTINE_MG_PER_PUFF
+    ).round(3)
     df = df.tail(limit)
     return [
         {
@@ -226,6 +272,8 @@ def user_puffs(
             "daily_limit": None if pd.isna(r["daily_limit"]) else int(r["daily_limit"]),
             "within_limit": None if pd.isna(r["within_limit"]) else bool(r["within_limit"]),
             "source": r["source"],
+            "nicotine_mg": _nicotine_mg(r["puffs_count"]),
+            "nicotine_mg_cumulative": float(r["nicotine_mg_cumulative"]),
         }
         for _, r in df.iterrows()
     ]
