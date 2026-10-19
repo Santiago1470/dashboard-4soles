@@ -118,10 +118,12 @@ expone también en `GET /api/device`. Con ella se calculan:
 
 - **Selector de paciente** (si hay varios CSV/usuarios).
 - **KPIs**: total de puffs, promedio diario, % de días dentro del límite, tendencia
-  de los últimos 7 días vs. los 7 previos, más el **resumen de nicotina consumida**
+  de los últimos 7 días vs. los 7 previos y **Nicotina total** (tarjeta con el total en mg
+  y el cálculo de 0,057 mg por puff), más el **resumen de nicotina consumida**
   (total, media diaria y último día) junto al cálculo utilizado.
-- **Gráfico diario**: barras de puffs por día, la línea del límite terapéutico y la
-  **línea de nicotina estimada (mg)** en el eje derecho.
+- **Gráfico diario**: barras de puffs por día con degradado, la línea roja discontinua del
+  límite terapéutico y el **área amarilla con degradado de nicotina estimada (mg)** en el eje
+  derecho, con tooltip que muestra puffs, límite y nicotina con sus unidades.
 - **Patrón horario**: puffs por franja horaria con su **equivalencia en nicotina (mg)**; con
   desplegable para ver **todas las jornadas** o **un día concreto**.
 - **Adherencia**: % diario de puffs dentro del límite.

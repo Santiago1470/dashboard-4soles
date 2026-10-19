@@ -16,6 +16,7 @@ import WhatshotIcon from '@mui/icons-material/Whatshot'
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
 import TrendingDownIcon from '@mui/icons-material/TrendingDown'
 import PercentIcon from '@mui/icons-material/Percent'
+import ScienceIcon from '@mui/icons-material/Science'
 
 import { api } from './api/client'
 import type { DailyRecord, DeviceInfo, HourlyRecord, PuffRecord, UserInfo, UserSummary } from './api/types'
@@ -160,8 +161,8 @@ export default function App() {
 
         {summary && (
           <>
-            {/* KPIs */}
-            <Grid container spacing={2} sx={{ mb: 3 }}>
+            {/* KPIs (15 columnas en md para que quepan 5 tarjetas en una fila) */}
+            <Grid container spacing={2} sx={{ mb: 3 }} columns={{ xs: 12, sm: 12, md: 15 }}>
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <KpiCard
                   title="Total de puffs"
@@ -204,6 +205,15 @@ export default function App() {
                       ? '#2e7d32'
                       : '#ef6c00'
                   }
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <KpiCard
+                  title="Nicotina total"
+                  value={`${summary.total_nicotine_mg ?? '—'} mg`}
+                  subtitle="0,057 mg por puff"
+                  icon={<ScienceIcon />}
+                  color="#f9a825"
                 />
               </Grid>
             </Grid>
